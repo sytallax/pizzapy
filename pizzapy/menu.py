@@ -27,10 +27,17 @@ class MenuLineItem:
 
 
 @dataclass
+class MenuCoupon:
+    code: str
+    name: str
+
+
+@dataclass
 class Menu:
     categories: Sequence[MenuCategory]
     products: Sequence[MenuProduct]
     line_items: Sequence[MenuLineItem]
+    coupons: Sequence[MenuCoupon]
 
 
 # class Menu(object):

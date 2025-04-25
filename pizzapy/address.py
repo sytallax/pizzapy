@@ -25,25 +25,3 @@ class Address:
     @property
     def line_two(self) -> str:
         return f"{self.city} {self.region} {self.postal_code}"
-
-    # def nearby_stores(self, service="Delivery"):
-    #     """Query the API to find nearby stores.
-    #
-    #     nearby_stores will filter the information we receive from the API
-    #     to exclude stores that are not currently online (!['IsOnlineNow']),
-    #     and stores that are not currently in service (!['ServiceIsOpen']).
-    #     """
-    #     data = request_json(
-    #         self.urls.find_url(), line1=self.line1, line2=self.line2, type=service
-    #     )
-    #     return [
-    #         Store(x, self.country)
-    #         for x in data["Stores"]
-    #         if x["IsOnlineNow"] and x["ServiceIsOpen"][service]
-    #     ]
-    #
-    # def closest_store(self, service="Delivery"):
-    #     stores = self.nearby_stores(service=service)
-    #     if not stores:
-    #         raise Exception("No local stores are currently open")
-    #     return stores[0]

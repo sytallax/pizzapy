@@ -1,4 +1,5 @@
 from collections.abc import Generator
+import re
 from enum import Enum
 from json import JSONDecodeError
 from typing import Any
@@ -7,7 +8,8 @@ import httpx
 import structlog
 
 from pizzapy.address import Address
-from pizzapy.menu import Menu, MenuCategory, MenuLineItem, MenuProduct
+from pizzapy.coupon import Coupon
+from pizzapy.menu import Menu, MenuCategory, MenuCoupon, MenuLineItem, MenuProduct
 from pizzapy.store import PickupType, Store
 
 logger = structlog.stdlib.get_logger(__name__)
@@ -122,20 +124,22 @@ class DominosApiConnector:
         )
         products: dict[str, dict[str, Any]] = data.get("Products", {})
         variants = data.get("Variants", {})
-        cupons = data.get("Cupons", {})
+        coupons = data.get("Coupons", {})
 
-        if not any((categories, products, variants, cupons)):
+        if not any((categories, products, variants, coupons)):
             logger.error("Could not parse menu", raw_menu=data)
             return None
 
         parsed_categories = self._parse_categories(categories)
         parsed_products = self._parse_products(products)
         parsed_line_items = self._parse_line_items(variants)
+        parsed_coupons = self._parse_coupons(coupons)
 
         return Menu(
             categories=list(parsed_categories),
             products=list(parsed_products),
             line_items=list(parsed_line_items),
+            coupons=list(parsed_coupons),
         )
 
     def _parse_categories(self, data: list[dict[str, Any]]) -> Generator[MenuCategory]:
@@ -210,3 +214,15 @@ class DominosApiConnector:
                 )
                 return
             yield MenuLineItem(code, name, product_code, price)
+
+    def _parse_coupons(self, data: dict[str, Any]) -> Generator[MenuCoupon]:
+        for code, coupon in data.items():
+            if not {"Code", "Name", "Price"}.issubset(coupon.keys()):
+                logger.error("Incorrect coupon format", data=coupon)
+                return
+            name = coupon.get("Name", "")
+            price = coupon.get("Price", "")
+            if price and not re.search(r"\$\d{1,2}\.\d{2}", name):
+                name += f" ${price}"
+
+            yield MenuCoupon(code, name)
